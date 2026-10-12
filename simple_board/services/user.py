@@ -16,6 +16,10 @@ from exceptions.user import (
     SamePasswordException,
 )
 from core.security import has_password, verify_password
+from utils.security import create_access_token
+from schemas.user import Token
+
+DUMMY_HASH = has_password("dummypassword")
 
 # CRUD
 
@@ -40,21 +44,22 @@ def register(db: Session, data: UserCreate):
 
 
 # 로그인
-
-
 def authenticate(db: Session, data: UserLogin):
 
     existing_user = db.scalar(select(User).where(User.email == data.email))
     # 회원가입 정보가 없는 경우
     if existing_user is None:
+        # Timing attack 방지 -> 일부러 시간 쓰기
+        verify_password(data.password, DUMMY_HASH)
         raise UserNotFoundException
 
     # 비밀번호 검증 틀린 경우
-
     if not verify_password(data.password, existing_user.password):
         raise InvalidPasswordException
 
-    return existing_user
+    access_token = create_access_token(data={"sub": str(existing_user.user_id)})
+
+    return Token(access_token=access_token)
 
 
 # 이름 변경
@@ -107,4 +112,13 @@ def update_password(db: Session, data: PasswordChange, user_id: int):
     user.password = has_password(data.new_password)
     db.commit()
     db.refresh(user)
+    return user
+
+
+# 현재 로그인된 사용자를 반환
+def get_user(db: Session, user_id: int) -> User:
+    user = db.get(User, user_id)
+    if user is None:
+        raise UserNotFoundException
+
     return user

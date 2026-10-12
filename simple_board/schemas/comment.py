@@ -5,9 +5,8 @@ from datetime import datetime
 
 class CommentCreate(BaseModel):
     body:str
-    user_id:int
     board_id:int
-
+# get_current_user 함수로 user_id 가져옴
 
 class CommentUpdate(BaseModel):
     body:str | None = None

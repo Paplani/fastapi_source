@@ -9,19 +9,20 @@ from datetime import datetime
 class Comment(Base):
     __tablename__ = "comments"
 
-    comment_id: Mapped[int] = mapped_column(Identity(start=1, increment=1), primary_key=True)
+    comment_id: Mapped[int] = mapped_column(
+        Identity(start=1, increment=1), primary_key=True
+    )
     body: Mapped[str] = mapped_column(String(1000), nullable=False)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("board_users.user_id"), nullable=False
     )
-    board_id: Mapped[int] = mapped_column(
-        ForeignKey("boards.id"), nullable=False
-    )
-    # comment.user.name~
-    user: Mapped["User"] = relationship(back_populates="comments")
-     # comment.board로 접근 가능하게 끔 Board와 연결
-    board: Mapped["Board"] = relationship(back_populates="comments")
+    board_id: Mapped[int] = mapped_column(ForeignKey("boards.id"), nullable=False)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now, onupdate=datetime.now
     )
+    # comment.user.name~
+    user: Mapped["User"] = relationship(back_populates="comments")
+    # comment.board로 접근 가능하게 끔 Board와 연결
+    board: Mapped["Board"] = relationship(back_populates="comments")

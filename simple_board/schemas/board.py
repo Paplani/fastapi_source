@@ -15,7 +15,7 @@ class CommentResponse(BaseModel):
     body: str
     user_id: int
     # 댓글 작성자 정보
-    user:UserResponse
+    user: UserResponse
     board_id: int
     created_at: datetime
 
@@ -27,7 +27,6 @@ CONTENTS_MAX_LENGTH = 1300
 
 
 class BoardCreate(BaseModel):
-    user_id: int
     title: str = Field(
         min_length=1, max_length=100
     )  # Field를 쓰면 빈 문자열 ""를 막을수 있음
@@ -48,9 +47,10 @@ class BoardResponse(BaseModel):
     user_id: int
     created_at: datetime
     # 댓글 목록
-    comments:list[CommentResponse]
+    comments: list[CommentResponse]
     # 게시글 작성자 이름
-    user:UserResponse
+    user: UserResponse
+    views: int
 
 
 class BoardPageResponse(BaseModel):
@@ -59,6 +59,8 @@ class BoardPageResponse(BaseModel):
     page: int
     size: int
     total_pages: int
+    criteria: str
+    keyword: str
 
 
 class Comment(BaseModel):

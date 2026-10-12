@@ -23,6 +23,10 @@ from exceptions.user import (
     UserNotFoundException,
     SamePasswordException,
 )
+from schemas.user import Token
+from repository.models.user import User
+from core.dependencies import get_current_user
+from fastapi.exceptions import RequestValidationError
 
 auth_router = APIRouter(tags=["Users"])
 
@@ -32,6 +36,13 @@ auth_router = APIRouter(tags=["Users"])
 # 비밀번호수정 /auth/1/password + patch
 # 이름수정 /auth/1/name + patch
 # 이메일수정 /auth/1/email + patch
+
+
+@auth_router.get("/me", response_model=UserResponse)
+async def read_me(current_user: User = Depends(get_current_user)) -> UserResponse:
+    return current_user
+
+
 @auth_router.post("", response_model=dict)
 async def post_signup(data: UserCreate, db: Session = Depends(get_db)) -> dict:
     try:
@@ -44,10 +55,10 @@ async def post_signup(data: UserCreate, db: Session = Depends(get_db)) -> dict:
     return {"message": "회원가입이 완료되었습니다.", "user_id": user.user_id}
 
 
-@auth_router.post("/login", response_model=dict)
-async def post_signin(data: UserLogin, db: Session = Depends(get_db)) -> UserResponse:
+@auth_router.post("/login", response_model=Token)
+async def post_signin(data: UserLogin, db: Session = Depends(get_db)) -> Token:
     try:
-        user = authenticate(data=data, db=db)
+        token = authenticate(data=data, db=db)
     except UserNotFoundException:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -58,7 +69,7 @@ async def post_signin(data: UserLogin, db: Session = Depends(get_db)) -> UserRes
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="비밀번호가 일치하지 않습니다.",
         )
-    return user
+    return token
 
 
 @auth_router.patch("/{user_id}/name", response_model=dict)
@@ -89,10 +100,10 @@ async def patch_email(
 
 @auth_router.patch("/{user_id}/password", response_model=dict)
 async def patch_password(
-    user_ud: int, data: PasswordChange, db: Session = Depends(get_db)
+    user_id: int, data: PasswordChange, db: Session = Depends(get_db)
 ) -> dict:
     try:
-        update_password(user_id=user_ud, data=data, db=db)
+        update_password(user_id=user_id, data=data, db=db)
     except UserNotFoundException:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -100,7 +111,7 @@ async def patch_password(
         )
     except InvalidPasswordException:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="현재 비밀번호를 다시 입력해주세요.",
         )
     except SamePasswordException:
